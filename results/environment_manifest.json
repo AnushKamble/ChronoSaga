@@ -1,0 +1,9 @@
+{
+  "os": "windows",
+  "arch": "amd64",
+  "go_version": "go1.27.0",
+  "num_cpu": 32,
+  "database": "PostgreSQL 18 (Local/Embedded)",
+  "timestamp": "2026-10-24T10:05:08Z",
+  "concurrency": 32
+}

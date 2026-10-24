@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chronosaga-postgres
+    environment:
+      POSTGRES_USER: chronosaga
+      POSTGRES_PASSWORD: chronosaga_secret
+      POSTGRES_DB: chronosaga
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chronosaga -d chronosaga"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chronosaga-api
+    command: ["api"]
+    environment:
+      CHRONOSAGA_PORT: "8080"
+      CHRONOSAGA_HOST: "0.0.0.0"
+      DATABASE_URL: "postgres://chronosaga:chronosaga_secret@postgres:5432/chronosaga?sslmode=disable"
+      CHRONOSAGA_LOG_LEVEL: "info"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chronosaga-worker-1
+    command: ["worker"]
+    environment:
+      DATABASE_URL: "postgres://chronosaga:chronosaga_secret@postgres:5432/chronosaga?sslmode=disable"
+      CHRONOSAGA_LOG_LEVEL: "info"
+      WORKER_CONCURRENCY: "5"
+      WORKER_POLL_INTERVAL: "300ms"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,0 +1,8 @@
+metric_name,value,unit
+workflow_start_throughput,595.48,ops/sec
+workflow_start_latency_p50,1.64,ms
+workflow_start_latency_p95,2.30,ms
+workflow_start_latency_p99,7.83,ms
+task_completion_throughput,314.59,ops/sec
+timer_lateness,52.00,ms
+recovery_latency,1.59,ms

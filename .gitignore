@@ -1,0 +1,23 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test artifacts and temporary database dirs
+.embedded-postgres-go/
+tmp/
+coverage.out
+*.test
+
+# Environment files
+.env
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
