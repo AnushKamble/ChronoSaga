@@ -119,7 +119,9 @@ func TestDemo_EndToEnd_OrderWorkflow_HappyPath(t *testing.T) {
 
 	// Step-by-step engine execution:
 	// Step 1: Replay schedules reserve_inventory -> Worker claims & completes
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick 1 failed: %v", err)
+	}
 	task, _ := queue.ClaimTask(ctx, "worker-1", 5*time.Second)
 	if task == nil || task.ActivityType != "reserve_inventory" {
 		t.Fatalf("expected reserve_inventory task, got %v", task)
@@ -127,7 +129,9 @@ func TestDemo_EndToEnd_OrderWorkflow_HappyPath(t *testing.T) {
 	worker.ExecuteTask(ctx, task)
 
 	// Step 2: Replay registers compensation, schedules charge_payment -> Worker claims & completes
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick 2 failed: %v", err)
+	}
 	task, _ = queue.ClaimTask(ctx, "worker-1", 5*time.Second)
 	if task == nil || task.ActivityType != "charge_payment" {
 		t.Fatalf("expected charge_payment task, got %v", task)
@@ -135,7 +139,9 @@ func TestDemo_EndToEnd_OrderWorkflow_HappyPath(t *testing.T) {
 	worker.ExecuteTask(ctx, task)
 
 	// Step 3: Replay registers compensation, schedules dispatch_shipment -> Worker claims & completes
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick 3 failed: %v", err)
+	}
 	task, _ = queue.ClaimTask(ctx, "worker-1", 5*time.Second)
 	if task == nil || task.ActivityType != "dispatch_shipment" {
 		t.Fatalf("expected dispatch_shipment task, got %v", task)
@@ -143,7 +149,9 @@ func TestDemo_EndToEnd_OrderWorkflow_HappyPath(t *testing.T) {
 	worker.ExecuteTask(ctx, task)
 
 	// Step 4: Final replay completes workflow!
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick 4 failed: %v", err)
+	}
 
 	// Verify workflow status
 	runFinal, err := store.GetWorkflowRun(ctx, run.WorkflowID)
@@ -206,22 +214,39 @@ func TestDemo_EndToEnd_OrderWorkflow_SagaCompensation(t *testing.T) {
 	}
 
 	// 1. reserve_inventory
-	_, _ = scheduler.Tick(ctx)
-	t1, _ := queue.ClaimTask(ctx, "w1", 5*time.Second)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick reserve failed: %v", err)
+	}
+	t1, err := queue.ClaimTask(ctx, "w1", 5*time.Second)
+	if err != nil || t1 == nil {
+		t.Fatalf("failed claiming t1: %v", err)
+	}
 	worker.ExecuteTask(ctx, t1)
 
 	// 2. charge_payment
-	_, _ = scheduler.Tick(ctx)
-	t2, _ := queue.ClaimTask(ctx, "w1", 5*time.Second)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick charge failed: %v", err)
+	}
+	t2, err := queue.ClaimTask(ctx, "w1", 5*time.Second)
+	if err != nil || t2 == nil {
+		t.Fatalf("failed claiming t2: %v", err)
+	}
 	worker.ExecuteTask(ctx, t2)
 
 	// 3. dispatch_shipment (FAILS!)
-	_, _ = scheduler.Tick(ctx)
-	t3, _ := queue.ClaimTask(ctx, "w1", 5*time.Second)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick dispatch failed: %v", err)
+	}
+	t3, err := queue.ClaimTask(ctx, "w1", 5*time.Second)
+	if err != nil || t3 == nil {
+		t.Fatalf("failed claiming t3: %v", err)
+	}
 	worker.ExecuteTask(ctx, t3)
 
 	// 4. Scheduler ticks: Replay sees terminal failure on dispatch_shipment, transitions workflow to COMPENSATING!
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick fail transition failed: %v", err)
+	}
 
 	runAfterFail, _ := store.GetWorkflowRun(ctx, run.WorkflowID)
 	if runAfterFail.Status != history.StatusCompensating {
@@ -229,13 +254,19 @@ func TestDemo_EndToEnd_OrderWorkflow_SagaCompensation(t *testing.T) {
 	}
 
 	// 5. Drive compensation step 1: refund_payment (LIFO!)
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick comp 1 failed: %v", err)
+	}
 
 	// 6. Drive compensation step 2: release_inventory (LIFO!)
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick comp 2 failed: %v", err)
+	}
 
 	// 7. Drive compensation final check
-	_, _ = scheduler.Tick(ctx)
+	if _, err := scheduler.Tick(ctx); err != nil {
+		t.Fatalf("tick comp complete failed: %v", err)
+	}
 
 	// Verify workflow ended in COMPENSATED
 	runFinal, _ := store.GetWorkflowRun(ctx, run.WorkflowID)
@@ -245,7 +276,9 @@ func TestDemo_EndToEnd_OrderWorkflow_SagaCompensation(t *testing.T) {
 
 	// Verify in database: payment status was updated to REFUNDED
 	var payStatus string
-	_ = db.QueryRowContext(ctx, "SELECT status FROM demo_payments WHERE order_id = $1", orderInput.OrderID).Scan(&payStatus)
+	if err := db.QueryRowContext(ctx, "SELECT status FROM demo_payments WHERE order_id = $1", orderInput.OrderID).Scan(&payStatus); err != nil {
+		t.Fatalf("failed scanning payment status: %v", err)
+	}
 	if payStatus != "REFUNDED" {
 		t.Errorf("expected payment status REFUNDED, got %s", payStatus)
 	}

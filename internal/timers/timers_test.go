@@ -106,10 +106,12 @@ func TestTimers_InjectedClock(t *testing.T) {
 	dueTime := baseTime.Add(1 * time.Hour)
 
 	timerID := uuid.NewString()
-	_, _ = db.ExecContext(ctx, `
+	if _, err := db.ExecContext(ctx, `
 		INSERT INTO timer_tasks (timer_id, workflow_id, command_index, duration_ms, due_at, status, created_at)
 		VALUES ($1, $2, 0, 3600000, $3, 'PENDING', $4);`,
-		timerID, run.WorkflowID, dueTime, baseTime)
+		timerID, run.WorkflowID, dueTime, baseTime); err != nil {
+		t.Fatalf("failed inserting timer task: %v", err)
+	}
 
 	// Injected clock set to baseTime (not due yet)
 	scheduler.SetClock(func() time.Time { return baseTime })

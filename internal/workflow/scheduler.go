@@ -81,9 +81,10 @@ func (s *OrchestratorScheduler) Tick(ctx context.Context) (int, error) {
 	var ids []string
 	for rows.Next() {
 		var id string
-		if err := rows.Scan(&id); err == nil {
-			ids = append(ids, id)
+		if err := rows.Scan(&id); err != nil {
+			return 0, fmt.Errorf("failed scanning runnable workflow id: %w", err)
 		}
+		ids = append(ids, id)
 	}
 	if err := rows.Err(); err != nil {
 		return 0, err
@@ -93,6 +94,7 @@ func (s *OrchestratorScheduler) Tick(ctx context.Context) (int, error) {
 	for _, id := range ids {
 		run, err := s.store.GetWorkflowRun(ctx, id)
 		if err != nil {
+			s.logger.Warn("Failed retrieving workflow run for scheduler tick", "workflow_id", id, "error", err)
 			continue
 		}
 

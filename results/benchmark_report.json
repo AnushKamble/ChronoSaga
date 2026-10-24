@@ -5,24 +5,24 @@
     "go_version": "go1.27.0",
     "num_cpu": 32,
     "database": "PostgreSQL 18 (Local/Embedded)",
-    "timestamp": "2026-10-24T10:05:08Z",
+    "timestamp": "2026-10-24T10:15:14Z",
     "concurrency": 32
   },
-  "workflow_start_throughput_ops_sec": 595.4791225019651,
+  "workflow_start_throughput_ops_sec": 597.6871896509267,
   "workflow_start_latency": {
     "count": 50,
-    "min_ms": 1.042,
-    "p50_ms": 1.636,
-    "p95_ms": 2.302,
-    "p99_ms": 7.834,
-    "max_ms": 7.834
+    "min_ms": 1.045,
+    "p50_ms": 1.617,
+    "p95_ms": 2.226,
+    "p99_ms": 7.935,
+    "max_ms": 7.935
   },
   "replay_latency_by_events_ms": {
-    "100_events": 4.582,
-    "10_events": 6.016,
-    "50_events": 3.77
+    "100_events": 3.735,
+    "10_events": 6.14,
+    "50_events": 3.168
   },
-  "task_completion_throughput_ops_sec": 314.59203704635826,
+  "task_completion_throughput_ops_sec": 309.76311382142364,
   "average_timer_lateness_ms": 52,
-  "process_recovery_time_ms": 1.592
+  "process_recovery_time_ms": 1.604
 }

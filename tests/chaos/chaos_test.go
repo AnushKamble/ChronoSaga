@@ -1,12 +1,14 @@
 package chaos_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -72,14 +74,18 @@ func TestChaos_WorkerCrashAfterSideEffectBeforeAck(t *testing.T) {
 
 	// Verify payment exists in database
 	var paymentCount int
-	_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM demo_payments WHERE order_id = 'ord-crash-window'").Scan(&paymentCount)
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM demo_payments WHERE order_id = 'ord-crash-window'").Scan(&paymentCount); err != nil {
+		t.Fatalf("failed querying payment count: %v", err)
+	}
 	if paymentCount != 1 {
 		t.Fatalf("expected 1 payment in DB, got %d", paymentCount)
 	}
 
 	// 3. CRASH INJECTION: Worker 1 dies abruptly before calling CompleteTask!
 	// (Simulate death by allowing lease to expire without calling queue.CompleteTask)
-	_, _ = db.ExecContext(ctx, "UPDATE activity_tasks SET lease_expires_at = NOW() - interval '2 seconds' WHERE task_id = $1", taskID)
+	if _, err := db.ExecContext(ctx, "UPDATE activity_tasks SET lease_expires_at = NOW() - interval '2 seconds' WHERE task_id = $1", taskID); err != nil {
+		t.Fatalf("failed updating lease expiry: %v", err)
+	}
 
 	// 4. Reaper reclaims the expired lease
 	reclaimed, err := queue.ReclaimExpiredLeases(ctx)
@@ -103,7 +109,10 @@ func TestChaos_WorkerCrashAfterSideEffectBeforeAck(t *testing.T) {
 	}
 
 	// 7. Worker 2 completes the task
-	rawRes, _ := json.Marshal(res2)
+	rawRes, err := json.Marshal(res2)
+	if err != nil {
+		t.Fatalf("failed marshaling result: %v", err)
+	}
 	err = queue.CompleteTask(ctx, taskID, claim2.LeaseGeneration, rawRes)
 	if err != nil {
 		t.Fatalf("worker 2 CompleteTask failed: %v", err)
@@ -111,13 +120,17 @@ func TestChaos_WorkerCrashAfterSideEffectBeforeAck(t *testing.T) {
 
 	// Invariant Verification:
 	// Despite 2 worker attempts across process crash, exactly ONE payment record must exist!
-	_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM demo_payments WHERE order_id = 'ord-crash-window'").Scan(&paymentCount)
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM demo_payments WHERE order_id = 'ord-crash-window'").Scan(&paymentCount); err != nil {
+		t.Fatalf("failed checking payment count: %v", err)
+	}
 	if paymentCount != 1 {
 		t.Fatalf("duplicate side effect violation! Expected 1 payment row, got %d", paymentCount)
 	}
 
 	var effectCount int
-	_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM demo_effects WHERE idempotency_key = $1", idempKey).Scan(&effectCount)
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM demo_effects WHERE idempotency_key = $1", idempKey).Scan(&effectCount); err != nil {
+		t.Fatalf("failed checking effect count: %v", err)
+	}
 	if effectCount != 1 {
 		t.Fatalf("duplicate effect violation! Expected 1 effect row, got %d", effectCount)
 	}
@@ -209,35 +222,44 @@ func TestChaos_BoundedRandomSeedWorkflow(t *testing.T) {
 
 // TestChaos_ProcessSIGKILLAndRestart tests killing the actual OS process running the API and restarting it.
 func TestChaos_ProcessSIGKILLAndRestart(t *testing.T) {
+	// Guarantee PostgreSQL test instance is active on port 54333
+	_ = testutil.SetupTestDB(t)
+
 	// Locate compiled binary or build it
 	binPath := "../../bin/chronosaga.exe"
+	if abs, err := filepath.Abs(binPath); err == nil {
+		binPath = abs
+	}
 	if _, err := os.Stat(binPath); err != nil {
-		binPath = "chronosaga.exe"
-		buildCmd := exec.Command("go", "build", "-o", binPath, "../../cmd/chronosaga")
+		tmpBin := filepath.Join(t.TempDir(), "chronosaga.exe")
+		buildCmd := exec.Command("go", "build", "-o", tmpBin, "../../cmd/chronosaga")
 		if err := buildCmd.Run(); err != nil {
-			t.Skipf("skipping OS process test: cannot build binary: %v", err)
+			t.Fatalf("failed to build binary for OS process test: %v", err)
 		}
-		defer os.Remove(binPath)
+		binPath = tmpBin
 	}
 
 	port := "58091"
 	dsn := "postgres://chronosaga:chronosaga_secret@127.0.0.1:54333/chronosaga_test?sslmode=disable"
 
 	// 1. Start process 1
+	var outBuf1, errBuf1 bytes.Buffer
 	cmd1 := exec.Command(binPath, "api")
+	cmd1.Stdout = &outBuf1
+	cmd1.Stderr = &errBuf1
 	cmd1.Env = append(os.Environ(),
 		"CHRONOSAGA_PORT="+port,
 		"DATABASE_URL="+dsn,
-		"CHRONOSAGA_LOG_LEVEL=error",
+		"CHRONOSAGA_LOG_LEVEL=info",
 	)
 	if err := cmd1.Start(); err != nil {
-		t.Skipf("cannot start child process: %v", err)
+		t.Fatalf("cannot start child process: %v", err)
 	}
 
 	// Wait for process to be listening
 	client := &http.Client{Timeout: 500 * time.Millisecond}
 	ready := false
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 30; i++ {
 		time.Sleep(100 * time.Millisecond)
 		resp, err := client.Get("http://127.0.0.1:" + port + "/health/live")
 		if err == nil && resp.StatusCode == 200 {
@@ -249,7 +271,7 @@ func TestChaos_ProcessSIGKILLAndRestart(t *testing.T) {
 
 	if !ready {
 		_ = cmd1.Process.Kill()
-		t.Skip("child process did not become healthy in time")
+		t.Fatalf("child process did not become healthy in time. stdout: %s, stderr: %s", outBuf1.String(), errBuf1.String())
 	}
 
 	// 2. Terminate process with hard SIGKILL / Kill()
@@ -260,11 +282,14 @@ func TestChaos_ProcessSIGKILLAndRestart(t *testing.T) {
 	t.Log("Process 1 killed via SIGKILL successfully")
 
 	// 3. Restart process 2 (new OS process) on same database
+	var outBuf2, errBuf2 bytes.Buffer
 	cmd2 := exec.Command(binPath, "api")
+	cmd2.Stdout = &outBuf2
+	cmd2.Stderr = &errBuf2
 	cmd2.Env = append(os.Environ(),
 		"CHRONOSAGA_PORT="+port,
 		"DATABASE_URL="+dsn,
-		"CHRONOSAGA_LOG_LEVEL=error",
+		"CHRONOSAGA_LOG_LEVEL=info",
 	)
 	if err := cmd2.Start(); err != nil {
 		t.Fatalf("failed restarting process 2: %v", err)
@@ -276,7 +301,7 @@ func TestChaos_ProcessSIGKILLAndRestart(t *testing.T) {
 
 	// Verify restarted process is up and healthy
 	readyAfterRestart := false
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 30; i++ {
 		time.Sleep(100 * time.Millisecond)
 		resp, err := client.Get("http://127.0.0.1:" + port + "/health/live")
 		if err == nil && resp.StatusCode == 200 {
@@ -287,7 +312,7 @@ func TestChaos_ProcessSIGKILLAndRestart(t *testing.T) {
 	}
 
 	if !readyAfterRestart {
-		t.Fatalf("restarted process did not become healthy")
+		t.Fatalf("restarted process did not become healthy. stdout: %s, stderr: %s", outBuf2.String(), errBuf2.String())
 	}
 
 	t.Log("Process 2 restarted and healthy from PostgreSQL state!")

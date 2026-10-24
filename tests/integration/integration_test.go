@@ -73,13 +73,17 @@ func TestIntegration_EventTaskAtomicity(t *testing.T) {
 
 	// Invariant Check: Neither the event nor the task row can exist!
 	var eventCount int
-	_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM workflow_events WHERE workflow_id = $1 AND event_type = 'ActivityScheduled'", run.WorkflowID).Scan(&eventCount)
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM workflow_events WHERE workflow_id = $1 AND event_type = 'ActivityScheduled'", run.WorkflowID).Scan(&eventCount); err != nil {
+		t.Fatalf("failed querying event count: %v", err)
+	}
 	if eventCount != 0 {
 		t.Fatalf("atomicity violation: ActivityScheduled was committed despite transaction error!")
 	}
 
 	var taskCount int
-	_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM activity_tasks WHERE task_id = $1", taskID).Scan(&taskCount)
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM activity_tasks WHERE task_id = $1", taskID).Scan(&taskCount); err != nil {
+		t.Fatalf("failed querying task count: %v", err)
+	}
 	if taskCount != 0 {
 		t.Fatalf("atomicity violation: activity_tasks row was committed despite transaction error!")
 	}
@@ -128,7 +132,9 @@ func TestIntegration_DuplicateActivityCompletion(t *testing.T) {
 
 	// Verify only 1 ActivityCompleted event is recorded in history
 	var completedCount int
-	_ = db.QueryRowContext(ctx, "SELECT COUNT(*) FROM workflow_events WHERE workflow_id = $1 AND event_type = 'ActivityCompleted'", run.WorkflowID).Scan(&completedCount)
+	if err := db.QueryRowContext(ctx, "SELECT COUNT(*) FROM workflow_events WHERE workflow_id = $1 AND event_type = 'ActivityCompleted'", run.WorkflowID).Scan(&completedCount); err != nil {
+		t.Fatalf("failed querying completed count: %v", err)
+	}
 	if completedCount != 1 {
 		t.Fatalf("expected exactly 1 ActivityCompleted event, got %d", completedCount)
 	}

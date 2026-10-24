@@ -221,33 +221,51 @@ func TestActivities_RetryPolicy_And_Persistence(t *testing.T) {
 	// Verify task is RETRY_WAIT and attempt is 1 in DB
 	var status string
 	var attempt int
-	_ = db.QueryRowContext(ctx, "SELECT status, attempt FROM activity_tasks WHERE task_id = $1", taskID).Scan(&status, &attempt)
+	if err := db.QueryRowContext(ctx, "SELECT status, attempt FROM activity_tasks WHERE task_id = $1", taskID).Scan(&status, &attempt); err != nil {
+		t.Fatalf("failed scanning task status: %v", err)
+	}
 	if status != "RETRY_WAIT" || attempt != 1 {
 		t.Errorf("expected RETRY_WAIT and attempt 1, got status=%s, attempt=%d", status, attempt)
 	}
 
 	// Fast-forward available_at so it can be claimed again
-	_, _ = db.ExecContext(ctx, "UPDATE activity_tasks SET available_at = NOW() - interval '1 second' WHERE task_id = $1", taskID)
+	if _, err := db.ExecContext(ctx, "UPDATE activity_tasks SET available_at = NOW() - interval '1 second' WHERE task_id = $1", taskID); err != nil {
+		t.Fatalf("failed updating available_at: %v", err)
+	}
 
 	// Attempt 2: Claim and Fail
-	claim2, _ := queue.ClaimTask(ctx, "worker-1", 5*time.Second)
+	claim2, err := queue.ClaimTask(ctx, "worker-1", 5*time.Second)
+	if err != nil || claim2 == nil {
+		t.Fatalf("failed claiming task attempt 2: %v", err)
+	}
 	if claim2.Attempt != 2 {
 		t.Errorf("expected attempt 2, got %d", claim2.Attempt)
 	}
-	_ = queue.FailTask(ctx, taskID, claim2.LeaseGeneration, errors.New("network blip 2"))
+	if err := queue.FailTask(ctx, taskID, claim2.LeaseGeneration, errors.New("network blip 2")); err != nil {
+		t.Fatalf("failed failing task attempt 2: %v", err)
+	}
 
 	// Fast-forward available_at
-	_, _ = db.ExecContext(ctx, "UPDATE activity_tasks SET available_at = NOW() - interval '1 second' WHERE task_id = $1", taskID)
+	if _, err := db.ExecContext(ctx, "UPDATE activity_tasks SET available_at = NOW() - interval '1 second' WHERE task_id = $1", taskID); err != nil {
+		t.Fatalf("failed updating available_at: %v", err)
+	}
 
 	// Attempt 3: Final attempt (maxAttempts = 3) -> should enter FAILED
-	claim3, _ := queue.ClaimTask(ctx, "worker-1", 5*time.Second)
+	claim3, err := queue.ClaimTask(ctx, "worker-1", 5*time.Second)
+	if err != nil || claim3 == nil {
+		t.Fatalf("failed claiming task attempt 3: %v", err)
+	}
 	if claim3.Attempt != 3 {
 		t.Errorf("expected attempt 3, got %d", claim3.Attempt)
 	}
-	_ = queue.FailTask(ctx, taskID, claim3.LeaseGeneration, errors.New("fatal terminal network failure"))
+	if err := queue.FailTask(ctx, taskID, claim3.LeaseGeneration, errors.New("fatal terminal network failure")); err != nil {
+		t.Fatalf("failed failing task attempt 3: %v", err)
+	}
 
 	// Verify status is FAILED
-	_ = db.QueryRowContext(ctx, "SELECT status, attempt FROM activity_tasks WHERE task_id = $1", taskID).Scan(&status, &attempt)
+	if err := db.QueryRowContext(ctx, "SELECT status, attempt FROM activity_tasks WHERE task_id = $1", taskID).Scan(&status, &attempt); err != nil {
+		t.Fatalf("failed scanning task final status: %v", err)
+	}
 	if status != "FAILED" || attempt != 3 {
 		t.Errorf("expected FAILED after 3 attempts, got status=%s, attempt=%d", status, attempt)
 	}
@@ -281,7 +299,9 @@ func TestActivities_NonRetryableError_ImmediatelyFails(t *testing.T) {
 	// Verify task immediately entered FAILED on attempt 1 despite maxAttempts=5
 	var status string
 	var attempt int
-	_ = db.QueryRowContext(ctx, "SELECT status, attempt FROM activity_tasks WHERE task_id = $1", taskID).Scan(&status, &attempt)
+	if err := db.QueryRowContext(ctx, "SELECT status, attempt FROM activity_tasks WHERE task_id = $1", taskID).Scan(&status, &attempt); err != nil {
+		t.Fatalf("failed scanning task status: %v", err)
+	}
 	if status != "FAILED" || attempt != 1 {
 		t.Errorf("expected FAILED on attempt 1, got status=%s, attempt=%d", status, attempt)
 	}

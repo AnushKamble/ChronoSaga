@@ -46,7 +46,9 @@ func TestSaga_LIFO_Order_And_Durability(t *testing.T) {
 		t.Fatalf("failed starting run: %v", err)
 	}
 
-	_, _ = db.ExecContext(ctx, "UPDATE workflow_runs SET status = 'COMPENSATING' WHERE workflow_id = $1", run.WorkflowID)
+	if _, err := db.ExecContext(ctx, "UPDATE workflow_runs SET status = 'COMPENSATING' WHERE workflow_id = $1", run.WorkflowID); err != nil {
+		t.Fatalf("failed updating run to COMPENSATING: %v", err)
+	}
 
 	// 2. Insert two compensations:
 	// Order 1: release_inventory (registered after step 1)
@@ -138,7 +140,9 @@ func TestSaga_Failure_And_OperatorRetry(t *testing.T) {
 		Input:           json.RawMessage(`{}`),
 		IdempotencyKey:  "saga-fail-" + uuid.NewString(),
 	})
-	_, _ = db.ExecContext(ctx, "UPDATE workflow_runs SET status = 'COMPENSATING' WHERE workflow_id = $1", run.WorkflowID)
+	if _, err := db.ExecContext(ctx, "UPDATE workflow_runs SET status = 'COMPENSATING' WHERE workflow_id = $1", run.WorkflowID); err != nil {
+		t.Fatalf("failed updating run to COMPENSATING: %v", err)
+	}
 
 	compID := uuid.NewString()
 	_, _ = db.ExecContext(ctx, `
