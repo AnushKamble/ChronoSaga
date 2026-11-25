@@ -140,7 +140,7 @@ stateDiagram-v2
 ChronoSaga uses PostgreSQL as an ACID-compliant distributed task queue:
 1. **Atomic Task Claim**:
    ```sql
-   SELECT task_id, workflow_id, command_index, activity_type, input_payload, 
+   SELECT task_id, workflow_id, command_index, activity_type, input_payload,
           retry_policy, attempt, lease_generation
    FROM activity_tasks
    WHERE status = 'PENDING' AND available_at <= NOW()
@@ -170,8 +170,8 @@ ChronoSaga uses PostgreSQL as an ACID-compliant distributed task queue:
        lease_owner = NULL,
        lease_expires_at = NULL,
        updated_at = NOW()
-   WHERE task_id = $2 
-     AND lease_generation = $3 
+   WHERE task_id = $2
+     AND lease_generation = $3
      AND status = 'RUNNING';
    ```
    If the worker took longer than the lease duration and another worker reclaimed the task (incrementing `lease_generation`), the stale worker's completion update affects 0 rows and is rejected.

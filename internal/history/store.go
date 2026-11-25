@@ -46,9 +46,9 @@ func (s *Store) AppendEventInTx(
 ) (*Event, error) {
 	var currentSeq int64
 	queryLock := `
-		SELECT last_event_sequence 
-		FROM workflow_runs 
-		WHERE workflow_id = $1 
+		SELECT last_event_sequence
+		FROM workflow_runs
+		WHERE workflow_id = $1
 		FOR UPDATE;`
 	err := tx.QueryRowContext(ctx, queryLock, workflowID).Scan(&currentSeq)
 	if err != nil {
@@ -84,8 +84,8 @@ func (s *Store) AppendEventInTx(
 	}
 
 	updateRunQuery := `
-		UPDATE workflow_runs 
-		SET last_event_sequence = $1, updated_at = NOW() 
+		UPDATE workflow_runs
+		SET last_event_sequence = $1, updated_at = NOW()
 		WHERE workflow_id = $2;`
 	_, err = tx.ExecContext(ctx, updateRunQuery, nextSeq, workflowID)
 	if err != nil {

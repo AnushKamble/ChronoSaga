@@ -38,7 +38,7 @@ func TestMigrations_Lifecycle(t *testing.T) {
 	for _, table := range tables {
 		var exists bool
 		query := `SELECT EXISTS (
-			SELECT FROM information_schema.tables 
+			SELECT FROM information_schema.tables
 			WHERE table_schema = 'public' AND table_name = $1
 		);`
 		if err := db.QueryRowContext(ctx, query, table).Scan(&exists); err != nil {
@@ -62,7 +62,7 @@ func TestMigrations_Lifecycle(t *testing.T) {
 	// 6. Verify table was removed
 	var runsTableExists bool
 	query := `SELECT EXISTS (
-		SELECT FROM information_schema.tables 
+		SELECT FROM information_schema.tables
 		WHERE table_schema = 'public' AND table_name = 'workflow_runs'
 	);`
 	if err := db.QueryRowContext(ctx, query).Scan(&runsTableExists); err != nil {

@@ -2,7 +2,7 @@
 
 ## 1. Non-Negotiable Contract & Approved Language
 
-> **Authoritative Statement of Semantics:**  
+> **Authoritative Statement of Semantics:**
 > "ChronoSaga persists workflow decisions and supports replay-based recovery. Activity tasks are delivered and attempted **at least once**; stable idempotency keys let cooperating activity handlers deduplicate repeated side effects. The engine does not guarantee exactly-once behavior for arbitrary external systems."
 
 ### Explicitly Prohibited Claims

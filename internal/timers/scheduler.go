@@ -107,8 +107,8 @@ func (s *Scheduler) FireDueTimers(ctx context.Context) (int, error) {
 
 			// 3. Wake workflow run projection to RUNNING
 			updateRunQuery := `
-				UPDATE workflow_runs 
-				SET status = $1, updated_at = NOW() 
+				UPDATE workflow_runs
+				SET status = $1, updated_at = NOW()
 				WHERE workflow_id = $2;`
 			if _, err := tx.ExecContext(ctx, updateRunQuery, history.StatusRunning, workflowID); err != nil {
 				return fmt.Errorf("failed waking workflow run after timer fire: %w", err)

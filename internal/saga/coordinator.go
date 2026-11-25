@@ -135,8 +135,8 @@ func (c *Coordinator) DriveCompensation(ctx context.Context, workflowID string, 
 			// A compensation failed terminally: halt the entire chain!
 			if updateErr := c.db.WithTx(ctx, func(tx *sql.Tx) error {
 				_, err := tx.ExecContext(ctx, `
-					UPDATE workflow_runs 
-					SET status = $1, updated_at = NOW() 
+					UPDATE workflow_runs
+					SET status = $1, updated_at = NOW()
 					WHERE workflow_id = $2;`,
 					history.StatusCompensationFailed, workflowID)
 				return err
@@ -164,8 +164,8 @@ func (c *Coordinator) DriveCompensation(ctx context.Context, workflowID string, 
 				return err
 			}
 			_, err := tx.ExecContext(ctx, `
-				UPDATE workflow_runs 
-				SET status = $1, updated_at = NOW(), completed_at = NOW() 
+				UPDATE workflow_runs
+				SET status = $1, updated_at = NOW(), completed_at = NOW()
 				WHERE workflow_id = $2;`,
 				history.StatusCompensated, workflowID)
 			return err
@@ -194,7 +194,7 @@ func (c *Coordinator) DriveCompensation(ctx context.Context, workflowID string, 
 			    lease_expires_at = NOW() + interval '30 seconds',
 			    attempt = $3,
 			    updated_at = NOW()
-			WHERE compensation_id = $4 
+			WHERE compensation_id = $4
 			  AND (status = 'PENDING' OR status = 'RETRY_WAIT');`
 
 		res, err := tx.ExecContext(ctx, claimQuery, workerID, newGen, newAttempt, target.CompensationID)
@@ -340,8 +340,8 @@ func (c *Coordinator) recordCompensationFailure(
 		}
 
 		_, err := tx.ExecContext(ctx, `
-			UPDATE workflow_runs 
-			SET status = $1, updated_at = NOW() 
+			UPDATE workflow_runs
+			SET status = $1, updated_at = NOW()
 			WHERE workflow_id = $2;`,
 			history.StatusCompensationFailed, rec.WorkflowID)
 		return err
@@ -403,8 +403,8 @@ func (c *Coordinator) RetryFailedCompensation(ctx context.Context, workflowID st
 
 		// 5. Update workflow status back to COMPENSATING
 		_, err = tx.ExecContext(ctx, `
-			UPDATE workflow_runs 
-			SET status = $1, updated_at = NOW() 
+			UPDATE workflow_runs
+			SET status = $1, updated_at = NOW()
 			WHERE workflow_id = $2;`,
 			history.StatusCompensating, workflowID)
 		return err

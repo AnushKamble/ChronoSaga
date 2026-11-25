@@ -140,8 +140,8 @@ func (q *TaskQueue) CompleteTask(ctx context.Context, taskID string, leaseGen in
 			    lease_owner = NULL,
 			    lease_expires_at = NULL,
 			    updated_at = NOW()
-			WHERE task_id = $2 
-			  AND lease_generation = $3 
+			WHERE task_id = $2
+			  AND lease_generation = $3
 			  AND status = 'RUNNING'
 			RETURNING workflow_id, command_index, activity_type;`
 
@@ -169,8 +169,8 @@ func (q *TaskQueue) CompleteTask(ctx context.Context, taskID string, leaseGen in
 
 		// Wake workflow run so it can be picked up for replay
 		updateRunQuery := `
-			UPDATE workflow_runs 
-			SET status = $1, updated_at = NOW() 
+			UPDATE workflow_runs
+			SET status = $1, updated_at = NOW()
 			WHERE workflow_id = $2;`
 		if _, err := tx.ExecContext(ctx, updateRunQuery, history.StatusRunning, workflowID); err != nil {
 			return fmt.Errorf("failed waking workflow run: %w", err)
@@ -315,8 +315,8 @@ func (q *TaskQueue) FailTask(ctx context.Context, taskID string, leaseGen int64,
 
 			// Wake workflow run so replay can process terminal failure
 			updateRunQuery := `
-				UPDATE workflow_runs 
-				SET status = $1, updated_at = NOW() 
+				UPDATE workflow_runs
+				SET status = $1, updated_at = NOW()
 				WHERE workflow_id = $2;`
 			if _, err := tx.ExecContext(ctx, updateRunQuery, history.StatusRunning, workflowID); err != nil {
 				return fmt.Errorf("failed waking workflow run on final failure: %w", err)
@@ -337,7 +337,7 @@ func (q *TaskQueue) ReclaimExpiredLeases(ctx context.Context) (int64, error) {
 		    lease_expires_at = NULL,
 		    available_at = NOW(),
 		    updated_at = NOW()
-		WHERE status = 'RUNNING' 
+		WHERE status = 'RUNNING'
 		  AND lease_expires_at <= NOW();`
 
 	res, err := q.db.ExecContext(ctx, query)

@@ -195,8 +195,8 @@ func (c *WorkflowContext) ExecuteActivity(name string, input any, opts ActivityO
 
 		// 3. Update workflow_runs status to WAITING_ACTIVITY
 		updateRunQuery := `
-			UPDATE workflow_runs 
-			SET status = $1, updated_at = NOW() 
+			UPDATE workflow_runs
+			SET status = $1, updated_at = NOW()
 			WHERE workflow_id = $2;`
 		if _, err := tx.ExecContext(c.ctx, updateRunQuery, history.StatusWaitingActivity, c.workflowID); err != nil {
 			return fmt.Errorf("failed updating workflow status to WAITING_ACTIVITY: %w", err)
@@ -364,8 +364,8 @@ func (c *WorkflowContext) Sleep(duration time.Duration) error {
 		}
 
 		updateRunQuery := `
-			UPDATE workflow_runs 
-			SET status = $1, updated_at = NOW() 
+			UPDATE workflow_runs
+			SET status = $1, updated_at = NOW()
 			WHERE workflow_id = $2;`
 		if _, err := tx.ExecContext(c.ctx, updateRunQuery, history.StatusWaitingTimer, c.workflowID); err != nil {
 			return fmt.Errorf("failed updating workflow status to WAITING_TIMER: %w", err)

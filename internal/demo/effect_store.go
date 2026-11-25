@@ -31,7 +31,7 @@ func (s *EffectStore) SeedInventory(ctx context.Context, sku string, quantity in
 	query := `
 		INSERT INTO demo_inventory (sku, available_quantity, reserved_quantity)
 		VALUES ($1, $2, 0)
-		ON CONFLICT (sku) DO UPDATE 
+		ON CONFLICT (sku) DO UPDATE
 		SET available_quantity = $2, reserved_quantity = 0;`
 	_, err := s.db.ExecContext(ctx, query, sku, quantity)
 	return err

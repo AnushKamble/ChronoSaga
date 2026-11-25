@@ -132,8 +132,8 @@ func (r *Replayer) ReplayWorkflow(ctx context.Context, run *history.WorkflowRun)
 					return err
 				}
 				_, err := tx.ExecContext(ctx, `
-					UPDATE workflow_runs 
-					SET status = $1, error_code = 'NONDETERMINISM', error_message = $2, updated_at = NOW(), completed_at = NOW() 
+					UPDATE workflow_runs
+					SET status = $1, error_code = 'NONDETERMINISM', error_message = $2, updated_at = NOW(), completed_at = NOW()
 					WHERE workflow_id = $3;`,
 					history.StatusNondeterministic, nondetErr.Error(), run.WorkflowID)
 				return err
@@ -162,8 +162,8 @@ func (r *Replayer) ReplayWorkflow(ctx context.Context, run *history.WorkflowRun)
 					return err
 				}
 				_, err := tx.ExecContext(ctx, `
-					UPDATE workflow_runs 
-					SET status = $1, error_code = 'WORKFLOW_FAILED', error_message = $2, updated_at = NOW() 
+					UPDATE workflow_runs
+					SET status = $1, error_code = 'WORKFLOW_FAILED', error_message = $2, updated_at = NOW()
 					WHERE workflow_id = $3;`,
 					history.StatusCompensating, execErr.Error(), run.WorkflowID)
 				return err
@@ -189,8 +189,8 @@ func (r *Replayer) ReplayWorkflow(ctx context.Context, run *history.WorkflowRun)
 				return err
 			}
 			_, err := tx.ExecContext(ctx, `
-				UPDATE workflow_runs 
-				SET status = $1, error_code = 'WORKFLOW_FAILED', error_message = $2, updated_at = NOW(), completed_at = NOW() 
+				UPDATE workflow_runs
+				SET status = $1, error_code = 'WORKFLOW_FAILED', error_message = $2, updated_at = NOW(), completed_at = NOW()
 				WHERE workflow_id = $3;`,
 				history.StatusFailed, execErr.Error(), run.WorkflowID)
 			return err
@@ -216,8 +216,8 @@ func (r *Replayer) ReplayWorkflow(ctx context.Context, run *history.WorkflowRun)
 		}
 
 		updateQuery := `
-			UPDATE workflow_runs 
-			SET status = $1, output_json = $2, updated_at = NOW(), completed_at = NOW() 
+			UPDATE workflow_runs
+			SET status = $1, output_json = $2, updated_at = NOW(), completed_at = NOW()
 			WHERE workflow_id = $3;`
 		if _, err := tx.ExecContext(ctx, updateQuery, history.StatusCompleted, output, run.WorkflowID); err != nil {
 			return fmt.Errorf("failed updating workflow run to COMPLETED: %w", err)

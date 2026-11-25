@@ -323,14 +323,14 @@ ChronoSaga provides **at-least-once activity execution**, not generic exactly-on
 
 ## Documentation Index
 
-- [`docs/architecture.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/architecture.md) â€” Replay algorithms, transaction matrix, and component architecture.
-- [`docs/event-catalog.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/event-catalog.md) â€” Comprehensive schema for all 18 typed event envelopes.
-- [`docs/guarantees-and-limitations.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/guarantees-and-limitations.md) â€” Failure windows and consistency semantics.
-- [`docs/decisions.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/decisions.md) â€” Architectural Decision Records (ADRs 001 - 007).
-- [`docs/api.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/api.md) â€” Full HTTP REST specification and schemas.
-- [`docs/limitations.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/limitations.md) â€” Operational boundaries and design constraints.
-- [`docs/testing-and-benchmarks.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/testing-and-benchmarks.md) â€” Test methodology and benchmark protocols.
-- [`PROJECT_STATE.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/PROJECT_STATE.md) â€” Persistent project execution ledger and audit trail.
+- [`docs/architecture.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/architecture.md) — Replay algorithms, transaction matrix, and component architecture.
+- [`docs/event-catalog.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/event-catalog.md) — Comprehensive schema for all 18 typed event envelopes.
+- [`docs/guarantees-and-limitations.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/guarantees-and-limitations.md) — Failure windows and consistency semantics.
+- [`docs/decisions.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/decisions.md) — Architectural Decision Records (ADRs 001 - 007).
+- [`docs/api.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/api.md) — Full HTTP REST specification and schemas.
+- [`docs/limitations.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/limitations.md) — Operational boundaries and design constraints.
+- [`docs/testing-and-benchmarks.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/docs/testing-and-benchmarks.md) — Test methodology and benchmark protocols.
+- [`PROJECT_STATE.md`](file:///C:/Users/anush/OneDrive/Desktop/Project/Projects/SWE/ChronoSaga/PROJECT_STATE.md) — Persistent project execution ledger and audit trail.
 
 ---
 
